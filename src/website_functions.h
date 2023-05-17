@@ -84,6 +84,7 @@ void append_page_header() {
   webpage += F("<li><a href='/'>Files</a></li>"); //Menu bar with commands
   webpage += F("<li><a href='/upload'>Configuration</a></li>"); 
   webpage += F("<li><a href='/view'>Camera</a></li>");
+  webpage += F("<li><a href='/viewStream'>Stream</a></li>");
   webpage += F("</ul>");
 }
 //Saves repeating many lines of code for HTML page footers
@@ -104,17 +105,7 @@ void SendHTML_Content()
 //   server.send(200, "text/html",webpage);
 // }
 
-void getPhoto(){
-  camToSpiffs();
-  File file = SPIFFS.open("/photo.jpg", "r"); // open the picture file
-  if (!file) {
-    server.send(404, "text/plain", "File not found"); // if the file doesn't exist, return a 404 error
-    return;
-  }
-  server.streamFile(file, "image/jpeg"); // send the file as a response with a content type of "image/jpeg"
-  file.close(); // close the file
 
-}
 
 void SendHTML_Header()
 {
@@ -135,9 +126,26 @@ void SendHTML_Stop()
   server.client().stop(); //Stop is needed because no content length was sent
 }
 
+
+void getPhoto(){
+  if (camToSpiffs()){
+    File file = SPIFFS.open("/photo.jpg", "r"); // open the picture file
+    if (!file) {
+      server.send(404, "text/plain", "File not found"); // if the file doesn't exist, return a 404 error
+      return;
+    }
+    server.sendHeader("Content-Type", "image/jpeg");
+    server.streamFile(file, "image/jpeg"); // send the file as a response with a content type of "image/jpeg"
+    file.close(); // close the file
+  }
+  else{
+    server.send(404, "text/plain", "Camera Failed");
+  }
+}
+
 void Config_Camera(){
 
-  camToSpiffs();
+  // camToSpiffs();
   // getPhoto();
   append_page_header();
   webpage+=F("<section>");
@@ -146,7 +154,7 @@ void Config_Camera(){
   webpage+=F("<p>");
   webpage+=F("</p>");
   webpage+=F("</div>");
-  webpage+=F("<div><img src='/photo' id='photo' width='70%'></div>");
+  webpage+=F("<div><img src='/photo' style='width=70%'><br></div>");
   webpage+=F("</section>");
   webpage += F("<a href='/'>[Back]</a><br><br>");
   append_page_footer();
@@ -454,6 +462,63 @@ void SD_dir()
   } else ReportSDNotPresent();
 }
 
+void handleFile(){
+  if(server.hasArg("file")){
+    String fileName = server.arg("file");
+
+    if (SD_present) 
+  { 
+    // File download = SD.open("/"+filename);
+    fs::FS &fs = SD_MMC;
+    File download = fs.open("/"+fileName);
+    if (download){
+      server.streamFile(download, "text/plain");
+      download.close();
+    } else server.send(404, "text/plain", "File not found");
+  } else server.send(400, "text/plain", "Bad Request");
+
+  }
+}
+
+void handleStream() {
+  // Send HTTP headers for MJPEG stream
+  server.sendHeader("Content-Type", "multipart/x-mixed-replace; boundary=frame");
+
+  while (server.client().connected()) {
+    camera_fb_t* fb = esp_camera_fb_get();
+    if (!fb) {
+      server.sendContent("--frame\r\n");
+      server.sendContent("Content-Type: image/jpeg\r\n");
+      server.sendContent("\r\n");
+      server.sendContent("\r\n");
+      continue;
+    }
+
+    server.sendContent("--frame\r\n");
+    server.sendContent("Content-Type: image/jpeg\r\n");
+    server.sendContent("\r\n");
+    server.sendContent((const char*)fb->buf, fb->len);
+    server.sendContent("\r\n");
+
+    esp_camera_fb_return(fb);
+  }
+}
+
+void get_stream(){
+  // server.send(200, "<html><body><img src='/stream' style='width:100%'></body></html>");
+  append_page_header();
+  webpage+=F("<section>");
+  webpage+=F("<h2>ESP32-CAM Last Photo</h2>");
+  webpage+=F("<p>It might take more than 5 seconds to capture a photo.</p>");
+  webpage+=F("<p>");
+  webpage+=F("</p>");
+  webpage+=F("</div>");
+  webpage+=F("<div><img src='/stream' style='width=70%'><br></div>");
+  webpage+=F("</section>");
+  webpage += F("<a href='/'>[Back]</a><br><br>");
+  append_page_footer();
+}
+
 
 void hostNetwork(){
 
@@ -481,6 +546,9 @@ void hostNetwork(){
     server.on("/upload",   File_Upload);
     server.on("/view", Config_Camera);
     server.on("/photo", getPhoto);
+    server.on("/file", HTTP_GET, handleFile);
+    server.on("/viewStream", get_stream);
+    server.on("/stream", handleStream);
     server.begin();
 
   //   server.on("/", HTTP_GET, [](AsyncWebServerRequest * request) {

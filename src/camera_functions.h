@@ -66,6 +66,7 @@ void camInit(){
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 20000000;
   config.pixel_format = PIXFORMAT_JPEG;
+  // config.jpeg_quality = 12;
 
   if (psramFound()) {
     config.frame_size = FRAMESIZE_UXGA;
@@ -92,7 +93,7 @@ bool checkPhoto( fs::FS &fs ) {
 }
 
 
-void camToSpiffs() {
+bool camToSpiffs() {
   camera_fb_t * fb = NULL; // pointer
   bool ok = 0; // Boolean indicating if the picture has been taken correctly
 
@@ -103,7 +104,7 @@ void camToSpiffs() {
     fb = esp_camera_fb_get();
     if (!fb) {
       Serial.println("Camera capture failed");
-      return;
+      return false;
     }
 
     // Photo file name
@@ -129,6 +130,7 @@ void camToSpiffs() {
     // check if file has been correctly saved in SPIFFS
     ok = checkPhoto(SPIFFS);
   } while ( !ok );
+  return true;
 }
 
 
@@ -160,6 +162,54 @@ void camToSD(){
   }
   file.close();
   esp_camera_fb_return(fb);
+}
+
+void takePicture(String path){
+
+  camera_fb_t * fb = NULL;
+ 
+  // Take Picture with Camera
+  fb = esp_camera_fb_get();  
+  if(!fb) {
+    Serial.println("Camera capture failed");
+    return;
+  }
+ 
+  // Path where new picture will be saved in SD Card
+  // String path = "/picture" + String(getNumEEPROM()) +".jpg";
+ 
+  fs::FS &fs = SD_MMC;
+  Serial.printf("Picture file name: %s\n", path.c_str());
+ 
+  File file = fs.open(path.c_str(), FILE_WRITE);
+  if(!file){
+    Serial.println("Failed to open file in writing mode");
+  }
+  else {
+    file.write(fb->buf, fb->len); // payload (image), payload length
+    Serial.printf("Saved file to path: %s\n", path.c_str());
+  }
+  file.close();
+  esp_camera_fb_return(fb);
+}
+
+String getFakeImageName(){
+    String path = "";
+    float tempVal = 37.5;
+    float humidityVal = 56.3;
+    path = "picture" + String(getNumEEPROM()) + "_" + String(tempVal) + "_" + String(humidityVal) +".jpg";
+    return path;
+
+    
+}
+
+
+
+void captureFakeDataPicture(){
+    String path = getFakeImageName();
+    takePicture("/" + path);
+    addToImageList(path + "\n");
+
 }
 
 

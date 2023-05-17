@@ -23,23 +23,36 @@ except subprocess.CalledProcessError as e:
     print("Could not connect to {}. Error: {}".format(ssid, e))
 
 
-def download_data(fileName):
+def download_data(targetFile, destFile):
     # link = " http://192.168.4.1?arg={}".format(arg)
     
-    link = "http://192.168.4.1/"
+    link = "http://192.168.4.1/file?file={}".format(targetFile)
     # response = requests.get(link)
-    response = requests.get(link, params={"filename": fileName})
+    response = requests.get(link)
 
     if response.status_code == 200:
-        imgData = response.json()
-        with open(fileName, "wb") as file:
+        with open(destFile, "wb") as file:
             file.write(response.content)
+            return True
         
-        print(imgData)
     else:
         print("{}".format(response.status_code))
 
+    return False
 
-FileName = "picture37.jpg"
-download_data("picture.jpg")
+
+FileName = "imageList.txt"
+download_data(FileName,FileName)
+
+print("Got the list of files!")
+
+with open(FileName, "r") as file:
+    for line in file:
+        if download_data(line, line):
+            print("downloaded file {}".format(line))
+        else:
+            print("Could not find {}".format(line))
+    
+
+print("done downloading files")
 # request_data(FileName)

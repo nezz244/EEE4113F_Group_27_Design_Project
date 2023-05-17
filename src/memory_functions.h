@@ -14,6 +14,8 @@
 
 bool   SD_present = false; //Controls if the SD card is present or not
 
+String imageList = "/imageList.txt";
+
 void resetEEPROM(){
     EEPROM.begin(EEPROM_SIZE);
     EEPROM.write(0, 0);
@@ -51,6 +53,29 @@ void initialiseSD(){
     //return;
   }
 }
+
+void addToImageList(String fileName){
+
+  initialiseSD();
+
+   File file = SD_MMC.open(imageList.c_str(), FILE_APPEND);
+     
+    if(!file){
+        Serial.println("Failed to write to file");
+        return;
+    }
+     
+    if(file.print(fileName.c_str())){
+        Serial.println("Successfully wrote to file!");
+    } else {
+        Serial.println("Failed to write to file");
+    }
+ 
+    file.close();
+}
+
+
+
 
 
 

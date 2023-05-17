@@ -12,6 +12,7 @@
 #include "website_functions.h"
 #include "camera_functions.h"
 #include "memory_functions.h"
+// #include "sensor_functions.h"
 // #include "eeprom_functions.h"
 // #include "sleep_functions.h"
 
@@ -40,6 +41,11 @@
 void setup() {
    WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
   Serial.begin(115200);
+
+  // // Turns off the ESP32-CAM white on-board LED (flash) connected to GPIO 4
+  // pinMode(4, OUTPUT);
+  // digitalWrite(4, LOW);
+  // rtc_gpio_hold_en(GPIO_NUM_4);
   
   camInit();
   initialiseSPIFFS();
@@ -52,7 +58,7 @@ void setup() {
 
   switch(wakeup_reason){
     // case ESP_SLEEP_WAKEUP_EXT0 : camToSD(); break;
-    case ESP_SLEEP_WAKEUP_EXT0 : hostNetwork(); break;
+    case ESP_SLEEP_WAKEUP_EXT0 : captureFakeDataPicture(); break;
     case ESP_SLEEP_WAKEUP_TIMER : hostNetwork(); break;
     case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
     default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;
