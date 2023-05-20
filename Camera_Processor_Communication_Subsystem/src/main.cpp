@@ -16,6 +16,9 @@
 // #include "eeprom_functions.h"
 // #include "sleep_functions.h"
 
+#define MOTION_SENSOR_MODE
+// #define TIMER_MODE
+
 
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  60        /* Time ESP32 will go to sleep (in seconds) */
@@ -51,11 +54,14 @@ void setup() {
   initialiseSPIFFS();
   initialiseSD();
 
+  
+
+#ifdef MOTION_SENSOR_MODE
+
   esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, 0);
   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
 
   esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
-
   switch(wakeup_reason){
     // case ESP_SLEEP_WAKEUP_EXT0 : camToSD(); break;
     case ESP_SLEEP_WAKEUP_EXT0 : captureFakeDataPicture(); break;
@@ -63,6 +69,14 @@ void setup() {
     case ESP_SLEEP_WAKEUP_ULP : Serial.println("Wakeup caused by ULP program"); break;
     default : Serial.printf("Wakeup was not caused by deep sleep: %d\n",wakeup_reason); break;
   }
+#endif
+
+#ifdef TIMER_MODE
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  captureFakeDataPicture();
+  hostNetwork();
+  
+#endif
 
   
   Serial.println("Going to sleep now");

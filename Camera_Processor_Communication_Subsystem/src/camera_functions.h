@@ -44,6 +44,7 @@
 
 
 void camInit(){
+   WRITE_PERI_REG(RTC_CNTL_BROWN_OUT_REG, 0); //disable brownout detector
     // OV2640 camera module
   camera_config_t config;
   config.ledc_channel = LEDC_CHANNEL_0;
@@ -136,15 +137,19 @@ bool camToSpiffs() {
 
 
 void camToSD(){
-
+  delay(5000);
   camera_fb_t * fb = NULL;
+  
+  
  
   // Take Picture with Camera
   fb = esp_camera_fb_get();  
+  fb = esp_camera_fb_get(); 
   if(!fb) {
     Serial.println("Camera capture failed");
     return;
   }
+  delay(1000);
  
   // Path where new picture will be saved in SD Card
   String path = "/picture" + String(getNumEEPROM()) +".jpg";
@@ -165,15 +170,18 @@ void camToSD(){
 }
 
 void takePicture(String path){
-
+  // delay(5000);
   camera_fb_t * fb = NULL;
  
   // Take Picture with Camera
   fb = esp_camera_fb_get();  
+  
   if(!fb) {
     Serial.println("Camera capture failed");
     return;
   }
+
+  delay(1000);
  
   // Path where new picture will be saved in SD Card
   // String path = "/picture" + String(getNumEEPROM()) +".jpg";
