@@ -1,5 +1,10 @@
 # EEE4113F_Group_27_Design_Project
 
+Shane Napoleon\
+Nthabiseng Tleane\
+Sebastian Haug\
+Tafadzwa Nesara\
+
 # This Project investigates the design of a low-cost camera trap with modern features aimed at wildlife research.
 ### The ESP32CAM board was chosen for development of a first prototype.
 
